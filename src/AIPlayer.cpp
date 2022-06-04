@@ -40,7 +40,11 @@ void AIPlayer::think(color &c_piece, int &id_piece, int &dice) const
     // }
     double alpha = menosinf;
     double beta = masinf;
-    double valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+    // double valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+    double valor;
+
+    valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, PorFavorFunciona);
+    
     cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
 }
 
@@ -314,7 +318,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
 {
     if (profundidad == profundidad_max || actual.gameOver())
     {
-        return heuristic(actual, jugador);
+        return PorFavorFunciona(actual, jugador);
     }
 
     color last_c = none;
@@ -361,4 +365,83 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
         }
         return beta;
     }
+}
+
+double AIPlayer::PorFavorFunciona(const Parchis &estado, int jugador){
+    // int oponente = (jugador+1)%2;
+    // auto mis_colores = estado.getPlayerColors(jugador);
+    // auto colores_oponente = estado.getPlayerColors(oponente);
+    // double heuristica = 0.0;
+
+    // for(int i=0;i<mis_colores.size();i++){
+    //     double heuristica_color = 0.0;
+    //     heuristica_color -= 7200*estado.piecesAtHome(mis_colores[i]);
+
+    //     auto mis_dados = estado.getAvailableDices(mis_colores[i]);
+
+    //     for(int j=0;j<num_pieces;j++){
+    //         auto distancia = estado.distanceToGoal(mis_colores[i],j);
+    //         heuristica_color += distancia > 7 ? -1000*distancia : 0;
+
+    //         for(int z=0;z<colores_oponente.size();z++){
+    //             auto dados_oponente = estado.getAvailableDices(colores_oponente[z]);
+    //             heuristica_color += 15000*estado.piecesAtHome(colores_oponente[z]);
+
+    //             for(int x=0;x<num_pieces;x++){
+    //                 auto mi_ficha = estado.getBoard().getPiece(mis_colores[i],j);
+    //                 auto ficha_oponente = estado.getBoard().getPiece(colores_oponente[z],x);
+    //                 auto distancia_yo_oponente = estado.distanceBoxtoBox(mis_colores[i],mi_ficha,ficha_oponente);
+
+    //                 if(find(mis_dados.begin(), mis_dados.end(), distancia_yo_oponente) != mis_dados.end()){
+    //                     heuristica_color += 3000*(1+estado.piecesAtGoal(colores_oponente[z]));
+    //                 }
+
+    //                 auto distancia_oponente_yo = estado.distanceBoxtoBox(colores_oponente[z],mi_ficha,ficha_oponente);
+
+    //                 if(find(dados_oponente.begin(), dados_oponente.end(), distancia_oponente_yo) != dados_oponente.end()){
+    //                     heuristica_color -= 8000;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     heuristica += heuristica_color*(1+1000+estado.piecesAtGoal(mis_colores[i]));
+    // }
+
+    // return heuristica;
+
+    int oponente = (jugador+1)%2;
+    auto colores_jugador = estado.getPlayerColors(jugador);
+    auto colores_rival = estado.getPlayerColors(oponente);
+    double valor = 0.0;
+
+    for(const auto &c : colores_jugador){
+        double valor_color = 0.0;
+        valor_color -= 72000 * estado.piecesAtHome(c);
+        auto dados_jugador = estado.getAvailableDices(c);
+
+        for(const auto &pieza : estado.getBoard().getPieces(c)){
+            auto distancia= estado.distanceToGoal(c,pieza);
+            valor_color += distancia > 7 ? -1000*distancia : 0;
+
+            for(const auto &c_rival: colores_rival){
+                auto dados_rival = estado.getAvailableDices(c_rival);
+                valor_color += 15000*estado.piecesAtHome(c_rival);
+
+                for(const auto &pieza_rival : estado.getBoard().getPieces(c_rival)){
+                    auto distancia_jugador_rival = estado.distanceBoxtoBox(c, pieza, pieza_rival);
+                    if((find(dados_jugador.begin(),dados_jugador.end(),distancia_jugador_rival))!=dados_jugador.end()){
+                        valor_color += 3000 *(1+estado.piecesAtGoal(c_rival));
+                    }
+
+                    auto distancia_rival_jugador = estado.distanceBoxtoBox(c, pieza_rival, pieza);
+                    if((find(dados_rival.begin(),dados_rival.end(),distancia_rival_jugador))!=dados_rival.end()){
+                        valor_color -= 8000;
+                    }
+                }
+            
+            }
+        }
+        valor += valor_color*(1+1000*estado.piecesAtGoal(c));
+    }
+    return valor;
 }
