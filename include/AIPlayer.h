@@ -94,5 +94,15 @@ class AIPlayer: public Player{
          * @return double 
          */
         static double PorFavorFunciona(const Parchis &estado, int jugador);
+
+        /**
+         * @brief Heurística que calcula la suma de las distancias a la meta
+         * Gana a ninja 1
+         * 
+         * @param estado Instancia de Parchis con el estado actual de la partida.
+         * @param jugador Id del jugador actual (0 o 1)
+         * @return double 
+         */
+        static double Heuristica_Chorra(const Parchis &estado, int jugador);
 };
 #endif
